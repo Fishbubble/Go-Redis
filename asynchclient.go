@@ -846,6 +846,20 @@ func (c *asyncClient) Zrangebyscore(arg0 string, arg1 float64, arg2 float64) (re
 
 }
 
+func (c *asyncClient) Zrangebyscorewithscore(key string, arg1 float64, arg2 float64) (result FutureBytesArray, err Error) {
+	arg0bytes := []byte(key)
+	arg1bytes := []byte(fmt.Sprintf("%e", arg1))
+	arg2bytes := []byte(fmt.Sprintf("%e", arg2))
+	arg3bytes := []byte("withscores")
+
+	var resp *PendingResponse
+	resp, err = c.conn.QueueRequest(&ZRANGEBYSCORE, [][]byte{arg0bytes, arg1bytes, arg2bytes, arg3bytes})
+	if err == nil {
+		result = resp.future.(FutureBytesArray)
+	}
+	return result, err
+}
+
 // Redis HGET command.
 func (c *asyncClient) Hget(arg0 string, arg1 string) (result FutureBytes, err Error) {
 	arg0bytes := []byte(arg0)
@@ -875,16 +889,88 @@ func (c *asyncClient) Hset(arg0 string, arg1 string, arg2 []byte) (stat FutureBo
 }
 
 // Redis HGETALL command.
-func (c *asyncClient) Hgetall(arg0 string) (result FutureBytes, err Error) {
+func (c *asyncClient) Hgetall(arg0 string) (result FutureBytesArray, err Error) {
 	arg0bytes := []byte(arg0)
 
 	var resp *PendingResponse
 	resp, err = c.conn.QueueRequest(&HGETALL, [][]byte{arg0bytes})
 	if err == nil {
-		result = resp.future.(FutureBytes)
+		result = resp.future.(FutureBytesArray)
 	}
 	return result, err
 
+}
+
+func (c *asyncClient) Hgetallmap(arg0 string) (result map[string]string, err Error) {
+	arg0bytes := []byte(arg0)
+
+	var resp *PendingResponse
+	resp, err = c.conn.QueueRequest(&HGETALL, [][]byte{arg0bytes})
+	r := []string{}
+	if err == nil {
+		f := resp.future.(FutureBytesArray)
+		ret, err1 := f.Get()
+		if err1 != nil {
+			err = err1
+			return
+		}
+		for _, v := range ret {
+			r = append(r, string(v))
+		}
+	}
+	for i := 0; i < len(r); {
+		result[r[i]] = r[i + 1]
+		i += 2
+	}
+	return result, err
+}
+
+func (c *asyncClient) Hmset(key string, arg1 map[string]string) (stat FutureBool, err Error) {
+	arg0bytes := []byte(key)
+	sendBytes := [][]byte{}
+	sendBytes = append(sendBytes, arg0bytes)
+	for k, v := range arg1 {
+		sendBytes = append(sendBytes, []byte(k))
+		sendBytes = append(sendBytes, []byte(v))
+	}
+
+	resp, err := c.conn.QueueRequest(&HMSET, sendBytes)
+	if err == nil {
+		stat = resp.future.(FutureBool)
+	}
+
+	return
+}
+
+func (c *asyncClient) Hmget(key string, arg1 *[]string) (result FutureBytesArray, err Error) {
+	sendBytes := appendAndConvert(key, *arg1...)
+	var resp *PendingResponse
+	resp, err = c.conn.QueueRequest(&HMGET, sendBytes)
+	if err == nil {
+		result = resp.future.(FutureBytesArray)
+	}
+	return result, err
+}
+
+func (c *asyncClient) Hmgetstrs(key string, arg1 *[]string) (result *[]string, err Error) {
+	sendBytes := appendAndConvert(key, *arg1...)
+	var resp *PendingResponse
+	resp, err = c.conn.QueueRequest(&HMGET, sendBytes)
+	if err == nil {
+		f := resp.future.(FutureBytesArray)
+		ret, err1 := f.Get()
+		if err1 != nil {
+			err = err1
+			return
+		}
+		r := []string{}
+		for _, v := range ret {
+			r = append(r, string(v))
+		}
+		result = &r
+	}
+
+	return result, err
 }
 
 // Redis FLUSHDB command.

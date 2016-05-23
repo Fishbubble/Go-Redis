@@ -851,6 +851,20 @@ func (c *syncClient) Zrangebyscore(arg0 string, arg1 float64, arg2 float64) (res
 
 }
 
+func (c *syncClient) Zrangebyscorewithscore(key string, arg1 float64, arg2 float64) (result [][]byte, err Error) {
+	arg0bytes := []byte(key)
+	arg1bytes := []byte(fmt.Sprintf("%e", arg1))
+	arg2bytes := []byte(fmt.Sprintf("%e", arg2))
+	arg3bytes := []byte("withscores")
+
+	var resp Response
+	resp, err = c.conn.ServiceRequest(&ZRANGEBYSCORE, [][]byte{arg0bytes, arg1bytes, arg2bytes, arg3bytes})
+	if err == nil {
+		result = resp.GetMultiBulkData()
+	}
+	return result, err
+}
+
 // Redis HGET command.
 func (c *syncClient) Hget(arg0 string, arg1 string) (result []byte, err Error) {
 	arg0bytes := []byte(arg0)
@@ -886,6 +900,29 @@ func (c *syncClient) Hgetall(arg0 string) (result [][]byte, err Error) {
 	}
 	return result, err
 
+}
+
+func (c *syncClient) Hmset(key string, arg1 map[string]string) (err Error) {
+	arg0bytes := []byte(key)
+	sendBytes := [][]byte{}
+	sendBytes = append(sendBytes, arg0bytes)
+	for k, v := range arg1 {
+		sendBytes = append(sendBytes, []byte(k))
+		sendBytes = append(sendBytes, []byte(v))
+	}
+
+	_, err = c.conn.ServiceRequest(&HMSET, sendBytes)
+	return
+}
+
+func (c *syncClient) Hmget(key string, arg1 *[]string) (result [][]byte, err Error) {
+	sendBytes := appendAndConvert(key, *arg1...)
+	var resp Response
+	resp, err = c.conn.ServiceRequest(&HMGET, sendBytes)
+	if err == nil {
+		result = resp.GetMultiBulkData()
+	}
+	return result, err
 }
 
 // Redis FLUSHDB command.

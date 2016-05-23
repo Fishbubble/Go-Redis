@@ -286,6 +286,9 @@ type Client interface {
 
 	// Redis ZRANGEBYSCORE command.
 	Zrangebyscore(key string, arg1 float64, arg2 float64) (result [][]byte, err Error)
+	// new add
+	// Redis ZRANGEBYSCORE command. withscores
+	Zrangebyscorewithscore(key string, arg1 float64, arg2 float64) (result [][]byte, err Error)
 
 	// Redis HGET command.
 	Hget(key string, hashkey string) (result []byte, err Error)
@@ -295,6 +298,14 @@ type Client interface {
 
 	// Redis HGETALL command.
 	Hgetall(key string) (result [][]byte, err Error)
+
+	// new add
+	// HMSET command
+	Hmset(key string, arg1 map[string]string) Error
+
+	// new add
+	// HMGET ADD
+	Hmget(key string, arg1 *[]string) (result [][]byte, err Error)
 
 	// Redis FLUSHDB command.
 	Flushdb() Error
@@ -498,6 +509,15 @@ type AsyncClient interface {
 
 	// Redis ZRANGEBYSCORE command.
 	Zrangebyscore(key string, arg1 float64, arg2 float64) (result FutureBytesArray, err Error)
+	Zrangebyscorewithscore(key string, arg1 float64, arg2 float64) (result FutureBytesArray, err Error)
+
+	Hset(key string, arg1 string, arg2 []byte) (stat FutureBool, err Error)
+	Hget(key string, arg1 string) (result FutureBytes, err Error)
+	Hgetall(key string) (result FutureBytesArray, err Error) // modify
+	Hgetallmap(arg0 string) (result map[string]string, err Error) // new add
+	Hmset(key string, arg1 map[string]string) (stat FutureBool, err Error) // new add
+	Hmget(key string, arg1 *[]string) (result FutureBytesArray, err Error) // new add
+	Hmgetstrs(key string, arg1 *[]string) (result *[]string, err Error) // new add
 
 	// Redis FLUSHDB command.
 	Flushdb() (status FutureBool, err Error)
