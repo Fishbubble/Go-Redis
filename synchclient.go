@@ -837,10 +837,10 @@ func (c *syncClient) Zrevrange(arg0 string, arg1 int64, arg2 int64) (result [][]
 }
 
 // Redis ZRANGEBYSCORE command.
-func (c *syncClient) Zrangebyscore(arg0 string, arg1 float64, arg2 float64) (result [][]byte, err Error) {
+func (c *syncClient) Zrangebyscore(arg0 string, arg1 interface{}, arg2 interface{}) (result [][]byte, err Error) {
 	arg0bytes := []byte(arg0)
-	arg1bytes := []byte(fmt.Sprintf("%e", arg1))
-	arg2bytes := []byte(fmt.Sprintf("%e", arg2))
+	arg1bytes := Interface2byte(arg1)
+	arg2bytes := Interface2byte(arg2)
 
 	var resp Response
 	resp, err = c.conn.ServiceRequest(&ZRANGEBYSCORE, [][]byte{arg0bytes, arg1bytes, arg2bytes})
@@ -851,10 +851,10 @@ func (c *syncClient) Zrangebyscore(arg0 string, arg1 float64, arg2 float64) (res
 
 }
 
-func (c *syncClient) Zrangebyscorewithscore(key string, arg1 float64, arg2 float64) (result [][]byte, err Error) {
+func (c *syncClient) Zrangebyscorewithscore(key string, arg1 interface{}, arg2 interface{}) (result [][]byte, err Error) {
 	arg0bytes := []byte(key)
-	arg1bytes := []byte(fmt.Sprintf("%e", arg1))
-	arg2bytes := []byte(fmt.Sprintf("%e", arg2))
+	arg1bytes := Interface2byte(arg1)
+	arg2bytes := Interface2byte(arg2)
 	arg3bytes := []byte("withscores")
 
 	var resp Response
@@ -902,7 +902,21 @@ func (c *syncClient) Hgetall(arg0 string) (result [][]byte, err Error) {
 
 }
 
-func (c *syncClient) Hmset(key string, arg1 map[string]string) (err Error) {
+func (c *syncClient) Hmset(key string, args interface{}) (err Error) {
+	arg0bytes := []byte(key)
+	sendBytes := [][]byte{}
+	sendBytes = append(sendBytes, arg0bytes)
+	argsBytes := Interface2bytes(args)
+	for _, v := range argsBytes {
+		fmt.Println(string(v))
+		sendBytes = append(sendBytes, v)
+	}
+
+	_, err = c.conn.ServiceRequest(&HMSET, sendBytes)
+	return
+}
+
+func (c *syncClient) Hmsetmap(key string, arg1 map[string]string) (err Error) {
 	arg0bytes := []byte(key)
 	sendBytes := [][]byte{}
 	sendBytes = append(sendBytes, arg0bytes)

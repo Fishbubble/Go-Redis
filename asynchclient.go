@@ -832,10 +832,10 @@ func (c *asyncClient) Zrevrange(arg0 string, arg1 int64, arg2 int64) (result Fut
 }
 
 // Redis ZRANGEBYSCORE command.
-func (c *asyncClient) Zrangebyscore(arg0 string, arg1 float64, arg2 float64) (result FutureBytesArray, err Error) {
-	arg0bytes := []byte(arg0)
-	arg1bytes := []byte(fmt.Sprintf("%e", arg1))
-	arg2bytes := []byte(fmt.Sprintf("%e", arg2))
+func (c *asyncClient) Zrangebyscore(key string, arg1 interface{}, arg2 interface{}) (result FutureBytesArray, err Error) {
+	arg0bytes := []byte(key)
+	arg1bytes := Interface2byte(arg1)
+	arg2bytes := Interface2byte(arg2)
 
 	var resp *PendingResponse
 	resp, err = c.conn.QueueRequest(&ZRANGEBYSCORE, [][]byte{arg0bytes, arg1bytes, arg2bytes})
@@ -843,13 +843,12 @@ func (c *asyncClient) Zrangebyscore(arg0 string, arg1 float64, arg2 float64) (re
 		result = resp.future.(FutureBytesArray)
 	}
 	return result, err
-
 }
 
-func (c *asyncClient) Zrangebyscorewithscore(key string, arg1 float64, arg2 float64) (result FutureBytesArray, err Error) {
+func (c *asyncClient) Zrangebyscorewithscore(key string, arg1 interface{}, arg2 interface{}) (result FutureBytesArray, err Error) {
 	arg0bytes := []byte(key)
-	arg1bytes := []byte(fmt.Sprintf("%e", arg1))
-	arg2bytes := []byte(fmt.Sprintf("%e", arg2))
+	arg1bytes := Interface2byte(arg1)
+	arg2bytes := Interface2byte(arg2)
 	arg3bytes := []byte("withscores")
 
 	var resp *PendingResponse
@@ -925,7 +924,24 @@ func (c *asyncClient) Hgetallmap(arg0 string) (result map[string]string, err Err
 	return result, err
 }
 
-func (c *asyncClient) Hmset(key string, arg1 map[string]string) (stat FutureBool, err Error) {
+func (c *asyncClient) Hmset(key string, args interface{}) (stat FutureBool, err Error) {
+	arg0bytes := []byte(key)
+	sendBytes := [][]byte{}
+	sendBytes = append(sendBytes, arg0bytes)
+	argsBytes := Interface2bytes(args)
+	for _, v := range argsBytes {
+		fmt.Println(string(v))
+		sendBytes = append(sendBytes, v)
+	}
+
+	resp, err := c.conn.QueueRequest(&HMSET, sendBytes)
+	if err == nil {
+		stat = resp.future.(FutureBool)
+	}
+	return
+}
+
+func (c *asyncClient) Hmsetmap(key string, arg1 map[string]string) (stat FutureBool, err Error) {
 	arg0bytes := []byte(key)
 	sendBytes := [][]byte{}
 	sendBytes = append(sendBytes, arg0bytes)

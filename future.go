@@ -17,6 +17,9 @@ package redis
 import (
 	"log"
 	"time"
+	"reflect"
+	"strconv"
+	"fmt"
 )
 
 // ----------------------------------------------------------------------------
@@ -278,4 +281,160 @@ func (fvc _futurefloat64) TryGet(ns time.Duration) (float64, Error, bool) {
 	}
 	v, err := Btof64(gv)
 	return v, nil, timedout
+}
+
+func Interface2bytes(args interface{}) (result [][]byte) {
+	switch mt := args.(type) {
+	case []byte:
+		result = append(result, mt)
+	case string:
+		result = append(result, []byte(mt))
+	case bool:
+		if mt {
+			result = append(result, []byte("1"))
+		} else {
+			result = append(result, []byte("0"))
+		}
+	case nil:
+		result = append(result, []byte{})
+	case int:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case int8:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case int16:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case int32:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case int64:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case uint:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case uint8:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case uint16:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case uint32:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case uint64:
+		b := []byte{}
+		b = strconv.AppendInt(b, int64(mt), 10)
+		result = append(result, b)
+	case float32:
+		ft := strconv.FormatFloat(float64(mt), 'f', -1, 32)
+		result = append(result, []byte(ft))
+	case float64:
+		ft := strconv.FormatFloat(mt, 'f', -1, 64)
+		result = append(result, []byte(ft))
+	case error:
+		result = append(result, []byte(mt.Error()))
+	case []interface{}:
+		l := len(mt)
+		for i := 0; i < l; i++ {
+			r := Interface2bytes(mt[i])
+			for _, v := range r {
+				result = append(result, v)
+			}
+		}
+	default:
+		switch reflect.TypeOf(mt).Kind() {
+		case reflect.Slice:
+			rm := reflect.ValueOf(mt)
+			l := rm.Len()
+			for i := 0; i < l; i++ {
+				vv := rm.Index(i).Interface()
+				r := Interface2bytes(vv)
+				for _, v := range r {
+					result = append(result, v)
+				}
+			}
+		case reflect.Map:
+			rm := reflect.ValueOf(mt)
+			//l := rm.Len() * 2
+			keys := rm.MapKeys()
+			for _, k := range keys {
+				kv := k.Interface()
+				vv := rm.MapIndex(k).Interface()
+				rk := Interface2bytes(kv)
+				rv := Interface2bytes(vv)
+				for _, v := range rk {
+					result = append(result, v)
+				}
+				for _, v := range rv {
+					result = append(result, v)
+				}
+			}
+		default:
+			r := Interface2bytes([]byte(fmt.Sprint(args)))
+			for _, v := range r {
+				result = append(result, v)
+			}
+		}
+	}
+	return
+}
+
+func Interface2byte(args interface{}) (result []byte) {
+	switch mt := args.(type) {
+	case []byte:
+		result = mt
+	case string:
+		result = []byte(mt)
+	case bool:
+		if mt {
+			result = []byte("1")
+		} else {
+			result = []byte("0")
+		}
+	case nil:
+		result = []byte{}
+	case int:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case int8:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case int16:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case int32:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case int64:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case uint:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case uint8:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case uint16:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case uint32:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case uint64:
+		result = strconv.AppendInt(result, int64(mt), 10)
+	case float32:
+		ft := strconv.FormatFloat(float64(mt), 'f', -1, 32)
+		result = []byte(ft)
+	case float64:
+		ft := strconv.FormatFloat(mt, 'f', -1, 64)
+		result = []byte(ft)
+	case error:
+		result = []byte(mt.Error())
+	default:
+		result = []byte{}
+	}
+	return
 }
